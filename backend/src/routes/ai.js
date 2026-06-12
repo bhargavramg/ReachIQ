@@ -35,6 +35,10 @@ async function callGemini(prompt) {
   return response.data.candidates[0].content.parts[0].text
 }
 
+router.get('/test', (req, res) => {
+  res.json({ success: true, route: 'ai' });
+});
+
 router.post('/segment', async (req, res) => {
   try {
     const { prompt } = req.body;
