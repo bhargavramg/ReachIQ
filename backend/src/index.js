@@ -12,7 +12,16 @@ const calendarRouter = require('./routes/calendar');
 const app = express();
 
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, 'http://localhost:5173']
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    if (origin.startsWith('http://localhost:')) return callback(null, true);
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+    
+    return callback(null, false); // For safety, allow by default if needed, or explicitly return false
+  },
+  credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 
