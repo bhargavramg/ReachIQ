@@ -36,11 +36,9 @@ function fallbackRuleParser(prompt) {
 }
 
 async function callGemini(prompt) {
-  console.log('Gemini key exists:', !!process.env.GEMINI_API_KEY)
+  console.log('Gemini key exists:', !!process.env.GEMINI_API_KEY);
 
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
-  const response = await axios.post(url, {
+  const payload = {
     contents: [{ 
       parts: [{ text: prompt }] 
     }],
@@ -48,10 +46,22 @@ async function callGemini(prompt) {
       temperature: 0.3, 
       maxOutputTokens: 1000 
     }
-  }, {
-    headers: { 'Content-Type': 'application/json' }
-  })
-  return response.data.candidates[0].content.parts[0].text
+  };
+
+  console.log('Gemini request payload:', JSON.stringify(payload, null, 2));
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  
+  try {
+    const response = await axios.post(url, payload, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    console.log('Gemini response:', JSON.stringify(response.data, null, 2));
+    return response.data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Error response from Gemini:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
+    throw error;
+  }
 }
 
 router.get('/test', (req, res) => {
@@ -150,7 +160,7 @@ Output:`;
 router.post('/draft', async (req, res) => {
   try {
     const { segmentDescription, prompt, channel, brandName } = req.body;
-    console.log('AI Draft Prompt received:', prompt); // Log User prompt
+    console.log('Incoming prompt:', prompt); // Log User prompt
 
     const sysPrompt = `You are a marketing copywriter for an Indian D2C brand called ${brandName}. Write exactly 3 short personalized campaign message variants for ${channel}.
 Target audience: ${segmentDescription}
@@ -182,8 +192,27 @@ No markdown, no explanation, just the raw JSON array.`;
     res.json({ drafts });
   } catch (error) {
     console.error('Draft generation error:', error.message);
+    
+    let exactReason = "AI generation unavailable.";
+    if (!process.env.GEMINI_API_KEY) {
+      exactReason = "Missing API key.";
+    } else if (error.response) {
+      const status = error.response.status;
+      if (status === 429) {
+        exactReason = "Rate limit exceeded.";
+      } else if (status === 400) {
+        exactReason = "Invalid request.";
+      } else {
+        exactReason = `API Error: ${status}`;
+      }
+    } else if (error.request) {
+      exactReason = "Network error.";
+    } else {
+      exactReason = `Error: ${error.message}`;
+    }
+
     res.json({ 
-      error: "AI generation unavailable. Using fallback templates.", 
+      error: `${exactReason} Using fallback templates.`, 
       drafts: [
         'Hi {{name}}, check our latest offers!',
         'Hey {{name}}, exclusive deals just for you!',
