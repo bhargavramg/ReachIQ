@@ -10,6 +10,7 @@ import CampaignDetail from './pages/CampaignDetail';
 import Analytics from './pages/Analytics';
 import AICopilot from './pages/AICopilot';
 import Architecture from './pages/Architecture';
+import Calendar from './pages/Calendar';
 import { ToastProvider } from './context/ToastContext';
 
 function Layout({ children }) {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/campaigns" element={<Layout><Campaigns /></Layout>} />
           <Route path="/campaigns/:id" element={<Layout><CampaignDetail /></Layout>} />
           <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+          <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
           <Route path="/ai-copilot" element={<Layout><AICopilot /></Layout>} />
           <Route path="/architecture" element={<Layout><Architecture /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserPlus, Megaphone, BarChart3, Bot, Network, Settings, HelpCircle, Plus } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Megaphone, BarChart3, Bot, Network, Settings, HelpCircle, Plus, Calendar } from 'lucide-react';
 import ReachIQBrand from './ReachIQBrand';
 
 const NavItem = ({ to, icon: Icon, label }) => (
@@ -56,6 +56,7 @@ export default function Sidebar() {
             <NavItem to="/audiences" icon={UserPlus} label="Audiences" />
             <NavItem to="/campaigns" icon={Megaphone} label="Campaigns" />
             <NavItem to="/analytics" icon={BarChart3} label="Analytics" />
+            <NavItem to="/calendar" icon={Calendar} label="Calendar" />
           </div>
 
           <div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Clock, Search, User } from 'lucide-react';
+import { Bell, Clock, Search, User, Calendar } from 'lucide-react';
 
 export default function Topbar() {
   return (
@@ -14,6 +14,7 @@ export default function Topbar() {
       </div>
       
       <div className="flex items-center gap-4 text-textSecondary">
+        <button className="hover:text-textPrimary transition-colors"><Calendar size={20} /></button>
         <button className="hover:text-textPrimary transition-colors"><Bell size={20} /></button>
         <button className="hover:text-textPrimary transition-colors"><Clock size={20} /></button>
         <div className="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden border border-border cursor-pointer">
