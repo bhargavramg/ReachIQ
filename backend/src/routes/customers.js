@@ -23,7 +23,9 @@ router.get('/', async (req, res) => {
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } }
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } }
       ];
     }
 
@@ -36,6 +38,36 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/', async (req, res) => {
+  try {
+    const { name, email, phone, city, tags } = req.body;
+    
+    // Basic validation
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    const customer = await prisma.customer.create({
+      data: {
+        name,
+        email,
+        phone,
+        city,
+        tags: tags ? tags.split(',').map(t => t.trim()) : [],
+        score: Math.floor(Math.random() * 100), // Mock initial score
+      }
+    });
+    
+    res.status(201).json(customer);
+  } catch (error) {
+    console.error(error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create customer' });
   }
 });
 
