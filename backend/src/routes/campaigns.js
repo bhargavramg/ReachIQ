@@ -16,6 +16,36 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+router.get('/funnel', async (req, res) => {
+  try {
+    const stats = await prisma.campaignStats.aggregate({
+      _sum: { sent: true, delivered: true, opened: true, clicked: true }
+    });
+    
+    const earliestCampaign = await prisma.campaign.findFirst({
+      where: { launchedAt: { not: null } },
+      orderBy: { launchedAt: 'asc' }
+    });
+    
+    let ordered = 0;
+    if (earliestCampaign && earliestCampaign.launchedAt && stats._sum.sent > 0) {
+      ordered = await prisma.order.count({
+        where: { orderedAt: { gte: earliestCampaign.launchedAt } }
+      });
+    }
+
+    res.json({
+      sent: stats._sum.sent || 0,
+      delivered: stats._sum.delivered || 0,
+      opened: stats._sum.opened || 0,
+      clicked: stats._sum.clicked || 0,
+      ordered: ordered
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 router.get('/:id/stats', async (req, res) => {
   try {

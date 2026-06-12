@@ -10,6 +10,13 @@ import useAppStats from '../hooks/useAppStats';
 export default function Dashboard() {
   const { appMetrics, loading: statsLoading } = useAppStats();
   const [events, setEvents] = useState([]);
+  const [funnelData, setFunnelData] = useState([
+    { label: 'Sent', count: 0, color: 'bg-blue-700' },
+    { label: 'Delivered', count: 0, color: 'bg-blue-600' },
+    { label: 'Opened', count: 0, color: 'bg-blue-500' },
+    { label: 'Clicked', count: 0, color: 'bg-blue-400' },
+    { label: 'Ordered', count: 0, color: 'bg-blue-300' },
+  ]);
   const [loadingEvents, setLoadingEvents] = useState(true);
   const navigate = useNavigate();
 
@@ -20,6 +27,15 @@ export default function Dashboard() {
       try {
         const eventsRes = await axios.get(`${API_URL}/api/calendar`);
         setEvents(eventsRes.data.filter(e => new Date(e.date) >= new Date()).slice(0, 5));
+
+        const funnelRes = await axios.get(`${API_URL}/api/campaigns/funnel`);
+        setFunnelData([
+          { label: 'Sent', count: funnelRes.data.sent, color: 'bg-blue-700' },
+          { label: 'Delivered', count: funnelRes.data.delivered, color: 'bg-blue-600' },
+          { label: 'Opened', count: funnelRes.data.opened, color: 'bg-blue-500' },
+          { label: 'Clicked', count: funnelRes.data.clicked, color: 'bg-blue-400' },
+          { label: 'Ordered', count: funnelRes.data.ordered, color: 'bg-blue-300' },
+        ]);
       } catch (err) {
         console.error(err);
       } finally {
@@ -95,13 +111,7 @@ export default function Dashboard() {
           </div>
         </CopilotInsight>
 
-        <AggregateFunnel data={[
-          { label: 'Sent', count: 100000, color: 'bg-blue-700' },
-          { label: 'Delivered', count: 98200, color: 'bg-blue-600' },
-          { label: 'Opened', count: 24500, color: 'bg-blue-500' },
-          { label: 'Clicked', count: 12800, color: 'bg-blue-400' },
-          { label: 'Ordered', count: 3200, color: 'bg-blue-300' },
-        ]} />
+        <AggregateFunnel data={funnelData} />
       </div>
 
       <h2 className="text-xl font-bold text-textPrimary mt-8 mb-4">Upcoming Events</h2>

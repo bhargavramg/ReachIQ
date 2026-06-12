@@ -4,9 +4,37 @@ import CopilotInsight from '../components/CopilotInsight';
 import AggregateFunnel from '../components/AggregateFunnel';
 import { Filter } from 'lucide-react';
 import useAppStats from '../hooks/useAppStats';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Analytics() {
   const { appMetrics } = useAppStats();
+  const [funnelData, setFunnelData] = useState([
+    { label: 'Sent', count: 0, color: 'bg-blue-700' },
+    { label: 'Delivered', count: 0, color: 'bg-blue-600' },
+    { label: 'Opened', count: 0, color: 'bg-blue-500' },
+    { label: 'Clicked', count: 0, color: 'bg-blue-400' },
+    { label: 'Ordered', count: 0, color: 'bg-blue-300' },
+  ]);
+
+  useEffect(() => {
+    async function fetchFunnel() {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const funnelRes = await axios.get(`${API_URL}/api/campaigns/funnel`);
+        setFunnelData([
+          { label: 'Sent', count: funnelRes.data.sent, color: 'bg-blue-700' },
+          { label: 'Delivered', count: funnelRes.data.delivered, color: 'bg-blue-600' },
+          { label: 'Opened', count: funnelRes.data.opened, color: 'bg-blue-500' },
+          { label: 'Clicked', count: funnelRes.data.clicked, color: 'bg-blue-400' },
+          { label: 'Ordered', count: funnelRes.data.ordered, color: 'bg-blue-300' },
+        ]);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchFunnel();
+  }, []);
   
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -51,13 +79,7 @@ export default function Analytics() {
           </div>
         </CopilotInsight>
 
-        <AggregateFunnel data={[
-          { label: 'Sent', count: 100000, color: 'bg-blue-700' },
-          { label: 'Delivered', count: 98200, color: 'bg-blue-600' },
-          { label: 'Opened', count: 24500, color: 'bg-blue-400' },
-          { label: 'Clicked', count: 12800, color: 'bg-blue-300' },
-          { label: 'Ordered', count: 3200, color: 'bg-blue-200' },
-        ]} />
+        <AggregateFunnel data={funnelData} />
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden mt-6">
