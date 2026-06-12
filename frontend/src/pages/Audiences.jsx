@@ -2,11 +2,12 @@ import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { Users, Banknote, Mail, TrendingUp, Mic, Filter, Star, Clock, Tag, Plus, X, Loader2 } from 'lucide-react';
 import StatCard from '../components/StatCard';
-import { appMetrics } from '../data/appMetrics';
 import { useNavigate } from 'react-router-dom';
+import useAppStats from '../hooks/useAppStats';
 import { useToast } from '../context/ToastContext';
 
 export default function Audiences() {
+  const { appMetrics } = useAppStats();
   const navigate = useNavigate();
   const toast = useToast();
 

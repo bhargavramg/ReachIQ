@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Users, Megaphone, Target, MessageSquare, 
-  Workflow, Sparkles, TrendingUp, Info, 
-  BookOpen, ArrowRightLeft, RefreshCw, Activity, Layers,
-  Monitor, Server, Database, Brain, Settings, Network, RefreshCcw, BarChart, ShoppingBag
+  Server, Database, Brain, Globe, Cpu, Network, Shield, Zap, Cloud, Layers, 
+  Smartphone, RefreshCw, Send, Target, Users, Megaphone, ShoppingBag,
+  Workflow, Sparkles, TrendingUp, Info, BookOpen, ArrowRightLeft, Activity, Monitor, BarChart, Settings
 } from 'lucide-react';
-import { appMetrics } from '../data/appMetrics';
+import useAppStats from '../hooks/useAppStats';
 
 const TopCard = ({ title, value, badge, icon: Icon }) => (
   <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
@@ -47,6 +46,9 @@ const DocCard = ({ icon: Icon, title, desc }) => (
 );
 
 export default function Architecture() {
+  const { appMetrics } = useAppStats();
+  const [activeTab, setActiveTab] = useState('data');
+
   return (
     <div className="max-w-[1200px] mx-auto space-y-6 pb-10">
       <div>

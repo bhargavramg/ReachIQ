@@ -45,11 +45,11 @@ async function main() {
   await prisma.order.deleteMany({});
   await prisma.customer.deleteMany({});
 
-  console.log('Generating 200 realistic Indian customers...');
+  console.log('Generating 500 realistic Indian customers...');
   
   const customersToCreate = [];
   
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 500; i++) {
     const fn = getRandomItem(firstNames);
     const ln = getRandomItem(lastNames);
     const name = `${fn} ${ln}`;
@@ -82,25 +82,22 @@ async function main() {
 
   console.log(`Successfully seeded ${createdCustomers.length} customers.`);
   
-  // Optionally create some orders for these customers to match the orderCount
-  console.log('Generating sample orders for customers...');
+  // Generate exactly 1500 orders
+  console.log('Generating 1500 sample orders...');
   let totalOrders = 0;
   
-  for (const customer of createdCustomers) {
-    // Just generate 1 to 3 actual orders per customer to populate the profile history, 
-    // even though total order count is higher, for performance.
-    const ordersToMake = Math.min(customer.orderCount, 3);
-    for (let j = 0; j < ordersToMake; j++) {
-      await prisma.order.create({
-        data: {
-          customerId: customer.id,
-          amount: getRandomInt(500, 5000),
-          items: [`Product ${getRandomInt(100, 999)}`],
-          orderedAt: new Date(customer.lastOrderAt.getTime() - getRandomInt(0, 30) * 24 * 60 * 60 * 1000)
-        }
-      });
-      totalOrders++;
-    }
+  // Assign orders to random customers
+  for (let j = 0; j < 1500; j++) {
+    const customer = getRandomItem(createdCustomers);
+    await prisma.order.create({
+      data: {
+        customerId: customer.id,
+        amount: getRandomInt(500, 5000),
+        items: [`Product ${getRandomInt(100, 999)}`],
+        orderedAt: new Date(customer.lastOrderAt.getTime() - getRandomInt(0, 180) * 24 * 60 * 60 * 1000)
+      }
+    });
+    totalOrders++;
   }
 
   console.log(`Successfully created ${totalOrders} sample orders.`);

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Send, Users, Activity, BarChart, Settings2, Smartphone, Mail, MessageSquare, Loader2, Info } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { appMetrics } from '../data/appMetrics';
+import useAppStats from '../hooks/useAppStats';
 import { useToast } from '../context/ToastContext';
 
 export default function Campaigns() {
+  const { appMetrics } = useAppStats();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);

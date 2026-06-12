@@ -5,12 +5,12 @@ import StatCard from '../components/StatCard';
 import CopilotInsight from '../components/CopilotInsight';
 import AggregateFunnel from '../components/AggregateFunnel';
 import { useNavigate } from 'react-router-dom';
-import { appMetrics } from '../data/appMetrics';
+import useAppStats from '../hooks/useAppStats';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState(null);
+  const { appMetrics, loading: statsLoading } = useAppStats();
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const navigate = useNavigate();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -18,22 +18,19 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get('/api/customers/stats').catch(() => ({ data: {} }));
-        setStats(res.data);
-        
         const eventsRes = await axios.get(`${API_URL}/api/calendar`);
         setEvents(eventsRes.data.filter(e => new Date(e.date) >= new Date()).slice(0, 5));
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setLoadingEvents(false);
       }
     }
     fetchData();
   }, []);
 
-  if (loading) {
-    return <div className="p-8 text-center text-textSecondary">Loading dashboard...</div>;
+  if (statsLoading || loadingEvents) {
+    return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
   }
 
   // Formatting large numbers

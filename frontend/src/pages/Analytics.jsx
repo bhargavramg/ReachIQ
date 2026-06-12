@@ -3,9 +3,11 @@ import StatCard from '../components/StatCard';
 import CopilotInsight from '../components/CopilotInsight';
 import AggregateFunnel from '../components/AggregateFunnel';
 import { Filter } from 'lucide-react';
-import { appMetrics } from '../data/appMetrics';
+import useAppStats from '../hooks/useAppStats';
 
 export default function Analytics() {
+  const { appMetrics } = useAppStats();
+  
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>

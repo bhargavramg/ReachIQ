@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Send, Bot, User, Sparkles, TrendingUp } from 'lucide-react';
 import StatCard from '../components/StatCard';
-import { appMetrics } from '../data/appMetrics';
+import useAppStats from '../hooks/useAppStats';
 
 export default function AICopilot() {
+  const { appMetrics } = useAppStats();
   const [messages, setMessages] = useState([
     { role: 'ai', text: "Hello! I've analyzed your latest CRM data. I noticed a 15% increase in churn risk among your High Value segment over the last 30 days. How would you like to proceed?" }
   ]);

@@ -6,7 +6,6 @@ import Papa from 'papaparse';
 import StatCard from '../components/StatCard';
 import CustomerModal from '../components/CustomerModal';
 import CustomerProfile from '../components/CustomerProfile';
-import { appMetrics } from '../data/appMetrics';
 import { useToast } from '../context/ToastContext';
 
 export default function Customers() {
@@ -160,10 +159,10 @@ export default function Customers() {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Total Customers" value={new Intl.NumberFormat('en-IN').format(stats?.total || appMetrics.customers)} trend="+12%" isPositive={true} color="blue" />
-        <StatCard label="VIP Customers" value={new Intl.NumberFormat('en-IN').format(stats?.vip || appMetrics.vipCustomers)} trend="+5%" isPositive={true} color="blue" />
-        <StatCard label="Average Order Value" value={formatCurrency(stats?.avgOrderValue || appMetrics.averageOrderValue)} trend="+2.4%" isPositive={true} color="blue" />
-        <StatCard label="Total Revenue Tracked" value={formatCurrency(stats?.totalRevenue || 12050000)} trend="-1.2%" isPositive={false} color="blue" />
+        <StatCard label="Total Customers" value={new Intl.NumberFormat('en-IN').format(stats?.total || 0)} trend="+12%" isPositive={true} color="blue" />
+        <StatCard label="VIP Customers" value={new Intl.NumberFormat('en-IN').format(stats?.vip || 0)} trend="+5%" isPositive={true} color="blue" />
+        <StatCard label="Average Order Value" value={formatCurrency(stats?.avgOrderValue || 0)} trend="+2.4%" isPositive={true} color="blue" />
+        <StatCard label="Total Revenue Tracked" value={formatCurrency(stats?.totalRevenue || 0)} trend="-1.2%" isPositive={false} color="blue" />
       </div>
 
       <div className="flex gap-6">
