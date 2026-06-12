@@ -28,13 +28,18 @@ export default function Customers() {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
+      console.log('API URL:', import.meta.env.VITE_API_URL);
       const params = new URLSearchParams(filters).toString();
-      const response = await axios.get(`/api/customers?${params}`);
-      console.log('Customers API response:', response.data);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || ''}/api/customers?${params}`);
+      console.log('Raw response:', response);
+      console.log('Response data:', response.data);
+      console.log('Customers array:', response?.data?.customers);
+      
       const customerList = response?.data?.customers || [];
-      console.log('Customers loaded:', customerList.length);
+      console.log('Customer count:', customerList.length);
+      
       setCustomers(customerList);
-      setTotal(response?.data?.total || 0);
+      setTotal(response?.data?.total || customerList.length);
     } catch (e) {
       console.error(e);
       setCustomers([]);
