@@ -7,6 +7,7 @@ const segmentsRouter = require('./routes/segments');
 const campaignsRouter = require('./routes/campaigns');
 const receiptsRouter = require('./routes/receipts');
 const aiRouter = require('./routes/ai');
+const calendarRouter = require('./routes/calendar');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/segments', segmentsRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/receipts', receiptsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/calendar', calendarRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });

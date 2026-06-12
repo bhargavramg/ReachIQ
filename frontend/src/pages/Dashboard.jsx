@@ -9,14 +9,20 @@ import { appMetrics } from '../data/appMetrics';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get('/api/customers/stats');
+        const res = await axios.get('/api/customers/stats').catch(() => ({ data: {} }));
         setStats(res.data);
+        
+        const eventsRes = await axios.get(`${API_URL}/api/calendar`);
+        setEvents(eventsRes.data.filter(e => new Date(e.date) >= new Date()).slice(0, 5));
       } catch (err) {
         console.error(err);
       } finally {
@@ -99,6 +105,30 @@ export default function Dashboard() {
           { label: 'Clicked', count: 12800, color: 'bg-blue-400' },
           { label: 'Ordered', count: 3200, color: 'bg-blue-300' },
         ]} />
+      </div>
+
+      <h2 className="text-xl font-bold text-textPrimary mt-8 mb-4">Upcoming Events</h2>
+      <div className="bg-white border border-border rounded-xl p-6">
+        {events.length === 0 ? (
+          <p className="text-textSecondary text-center py-4">No upcoming events scheduled.</p>
+        ) : (
+          <div className="space-y-4">
+            {events.map((evt, idx) => (
+              <div key={idx} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 px-2 rounded-lg" onClick={() => navigate('/calendar')}>
+                <div className="flex items-center gap-4">
+                  <div className={`w-2 h-2 rounded-full ${evt.type === 'campaign' ? 'bg-blue-500' : evt.type === 'followup' ? 'bg-green-500' : evt.type === 'ai' ? 'bg-purple-500' : 'bg-orange-500'}`}></div>
+                  <div>
+                    <p className="font-semibold text-textPrimary">{evt.title}</p>
+                    <p className="text-xs text-textSecondary">{new Date(evt.date).toDateString()} • {evt.time || 'All Day'}</p>
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded font-medium ${evt.type === 'campaign' ? 'bg-blue-100 text-blue-700' : evt.type === 'followup' ? 'bg-green-100 text-green-700' : evt.type === 'ai' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}`}>
+                  {evt.type}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

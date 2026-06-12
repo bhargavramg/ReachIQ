@@ -70,3 +70,14 @@ model CampaignStats {
   clicked    Int      @default(0)
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
+
+model CalendarEvent {
+  id          String   @id @default(uuid())
+  title       String
+  date        DateTime
+  time        String?
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,17 +1,9 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Sparkles, BellRing, TrendingUp, Calendar as CalendarIcon, Users } from 'lucide-react';
-
-const events = [
-  { day: 1, title: 'VIP Outreach', type: 'campaign' },
-  { day: 2, title: 'Marketing Review', type: 'meeting' },
-  { day: 4, title: 'AI Launch Prep', type: 'ai' },
-  { day: 8, title: 'Summer Sale', type: 'campaign' },
-  { day: 9, title: 'Call Priya Sharma', type: 'followup' },
-  { day: 9, title: 'AI Rec: Campaign', type: 'ai' },
-  { day: 10, title: 'CRM Sync', type: 'meeting' },
-  { day: 12, title: 'Follow-up VIP', type: 'followup' },
-  { day: 17, title: 'AI Audience Review', type: 'ai' },
-];
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ChevronLeft, ChevronRight, Plus, Sparkles, BellRing, TrendingUp, Edit2, Trash2 } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addWeeks, subWeeks, addDays, subDays } from 'date-fns';
+import EventModal from '../components/EventModal';
+import { useToast } from '../context/ToastContext';
 
 const getEventColor = (type) => {
   switch (type) {
@@ -34,63 +26,167 @@ const getLineColor = (type) => {
 };
 
 export default function Calendar() {
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('month'); // day, week, month
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState(null);
 
-  // Generate grid for June 2026
-  const daysInJune = 30;
-  const startDayOfWeek = 1; // June 1, 2026 is a Monday
-  const gridDays = [];
+  const { addToast } = useToast();
 
-  // Previous month days
-  for (let i = 0; i < startDayOfWeek; i++) {
-    gridDays.push({ day: 31 - i, currentMonth: false });
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/api/calendar`);
+      setEvents(response.data);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      addToast('Failed to load events', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const handlePrevious = () => {
+    if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+    else if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
+    else setCurrentDate(subDays(currentDate, 1));
+  };
+
+  const handleNext = () => {
+    if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+    else if (view === 'week') setCurrentDate(addWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const handleSaveEvent = async (formData, id) => {
+    try {
+      if (id) {
+        await axios.put(`${API_URL}/api/calendar/${id}`, formData);
+        addToast('Event updated successfully', 'success');
+      } else {
+        await axios.post(`${API_URL}/api/calendar`, formData);
+        addToast('Event created successfully', 'success');
+      }
+      setIsModalOpen(false);
+      fetchEvents();
+    } catch (error) {
+      console.error('Error saving event:', error);
+      addToast('Failed to save event', 'error');
+    }
+  };
+
+  const handleDeleteEvent = async (id, e) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      try {
+        await axios.delete(`${API_URL}/api/calendar/${id}`);
+        addToast('Event deleted', 'success');
+        fetchEvents();
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        addToast('Failed to delete event', 'error');
+      }
+    }
+  };
+
+  const generateAISchedule = async () => {
+    setLoading(true);
+    try {
+      await axios.post(`${API_URL}/api/calendar/ai-schedule`);
+      addToast('AI Schedule generated successfully', 'success');
+      fetchEvents();
+    } catch (error) {
+      console.error('Error generating AI schedule:', error);
+      addToast('Failed to generate AI schedule', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    setEventToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (evt, e) => {
+    e.stopPropagation();
+    setEventToEdit(evt);
+    setIsModalOpen(true);
+  };
+
+  // Generate grid days based on view
+  let gridDays = [];
+  if (view === 'month') {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+    gridDays = eachDayOfInterval({ start: startDate, end: endDate });
+  } else if (view === 'week') {
+    const startDate = startOfWeek(currentDate);
+    const endDate = endOfWeek(currentDate);
+    gridDays = eachDayOfInterval({ start: startDate, end: endDate });
+  } else {
+    gridDays = [currentDate];
   }
-  gridDays.reverse();
 
-  // Current month days
-  for (let i = 1; i <= daysInJune; i++) {
-    gridDays.push({ day: i, currentMonth: true });
-  }
-
-  // Next month days
-  const remainingCells = 35 - gridDays.length;
-  for (let i = 1; i <= remainingCells; i++) {
-    gridDays.push({ day: i, currentMonth: false });
-  }
+  // Today's events for right panel
+  const todaysEvents = events.filter(e => isSameDay(new Date(e.date), new Date()));
+  
+  // Metrics
+  const scheduledCount = events.filter(e => e.type === 'campaign').length;
+  const meetingCount = events.filter(e => e.type === 'meeting').length;
+  const followupCount = events.filter(e => e.type === 'followup').length;
 
   return (
-    <div className="flex h-full gap-6">
+    <div className="flex h-full gap-6 flex-col lg:flex-row overflow-hidden">
       {/* Main Calendar Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-start justify-between mb-6">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto lg:overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-textPrimary mb-2">Calendar</h1>
-            <p className="text-textSecondary text-sm max-w-md">
-              Manage campaigns, customer follow-ups, meetings, and AI-generated reminders.
+            <h1 className="text-2xl font-semibold text-textPrimary mb-1">Calendar</h1>
+            <p className="text-textSecondary text-sm max-w-md hidden sm:block">
+              Manage campaigns, customer follow-ups, meetings, and AI reminders.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium text-textPrimary hover:bg-gray-50 transition-colors">
+          <div className="flex flex-wrap gap-3">
+            <button onClick={handleToday} className="px-4 py-2 bg-white border border-border rounded-lg text-sm font-medium text-textPrimary hover:bg-gray-50 transition-colors">
               Today
             </button>
-            <button className="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
+            <button onClick={openCreateModal} className="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
               <Plus size={16} /> Create Event
             </button>
-            <button className="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
+            <button onClick={generateAISchedule} className="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
               <Sparkles size={16} /> AI Schedule
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-border rounded-xl p-4 flex flex-col flex-1">
+        <div className="bg-white border border-border rounded-xl p-4 flex flex-col flex-1 min-h-[500px]">
           {/* Controls */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <button className="p-1.5 hover:bg-gray-100 rounded-md text-textSecondary transition-colors"><ChevronLeft size={20} /></button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-md text-textSecondary transition-colors"><ChevronRight size={20} /></button>
+                <button onClick={handlePrevious} className="p-1.5 hover:bg-gray-100 rounded-md text-textSecondary transition-colors"><ChevronLeft size={20} /></button>
+                <button onClick={handleNext} className="p-1.5 hover:bg-gray-100 rounded-md text-textSecondary transition-colors"><ChevronRight size={20} /></button>
               </div>
-              <h2 className="text-lg font-medium text-textPrimary">June 2026</h2>
+              <h2 className="text-lg font-medium text-textPrimary min-w-[140px]">
+                {view === 'day' ? format(currentDate, 'MMMM d, yyyy') : format(currentDate, 'MMMM yyyy')}
+              </h2>
             </div>
             
             <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -109,27 +205,67 @@ export default function Calendar() {
           </div>
 
           {/* Grid */}
-          <div className="flex-1 flex flex-col min-h-0 border border-border rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 border-b border-border bg-gray-50">
-              {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-                <div key={day} className="py-2 text-center text-xs font-semibold text-textSecondary tracking-wider">
-                  {day}
-                </div>
-              ))}
-            </div>
-            <div className="flex-1 grid grid-cols-7 grid-rows-5">
-              {gridDays.map((cell, i) => {
-                const isToday = cell.day === 9 && cell.currentMonth;
-                const cellEvents = cell.currentMonth ? events.filter(e => e.day === cell.day) : [];
+          <div className="flex-1 flex flex-col min-h-0 border border-border rounded-lg overflow-y-auto sm:overflow-hidden relative">
+            {loading && (
+               <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+               </div>
+            )}
+            {/* Header row for Week/Month */}
+            {view !== 'day' && (
+              <div className={`grid ${view === 'week' ? 'grid-cols-7' : 'grid-cols-7'} border-b border-border bg-gray-50`}>
+                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                  <div key={day} className="py-2 text-center text-xs font-semibold text-textSecondary tracking-wider">
+                    {day}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={`flex-1 ${view === 'month' ? 'grid grid-cols-7 grid-rows-5' : view === 'week' ? 'grid grid-cols-7' : 'flex flex-col'} overflow-y-auto`}>
+              {gridDays.map((day, i) => {
+                const isCurrentMonth = isSameMonth(day, currentDate) || view !== 'month';
+                const isToday = isSameDay(day, new Date());
+                const cellEvents = events.filter(e => isSameDay(new Date(e.date), day));
                 
+                if (view === 'day') {
+                  return (
+                     <div key={i} className="flex-1 p-4 bg-white min-h-[400px]">
+                       <h3 className="text-lg font-bold text-textPrimary mb-4">{format(day, 'EEEE, MMMM do')}</h3>
+                       {cellEvents.length === 0 ? (
+                         <p className="text-textSecondary text-sm">No events scheduled for this day.</p>
+                       ) : (
+                         <div className="space-y-3">
+                           {cellEvents.map((evt, idx) => (
+                             <div key={idx} onClick={(e) => openEditModal(evt, e)} className={`p-3 rounded cursor-pointer group flex justify-between items-center ${getEventColor(evt.type)}`}>
+                               <div>
+                                 <p className="font-semibold">{evt.title}</p>
+                                 <p className="text-xs opacity-80">{evt.time || 'All Day'} • {evt.description}</p>
+                               </div>
+                               <button onClick={(e) => handleDeleteEvent(evt.id, e)} className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-white/20 rounded transition-all">
+                                 <Trash2 size={16} />
+                               </button>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                  );
+                }
+
                 return (
-                  <div key={i} className={`border-b border-r border-border p-2 flex flex-col gap-1 min-h-[100px] ${!cell.currentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}`}>
-                    <div className={`text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-white' : (cell.currentMonth ? 'text-textPrimary' : 'text-gray-400')}`}>
-                      {cell.day}
+                  <div key={i} className={`border-b border-r border-border p-2 flex flex-col gap-1 min-h-[100px] ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}`}>
+                    <div className={`text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-white' : (isCurrentMonth ? 'text-textPrimary' : 'text-gray-400')}`}>
+                      {format(day, 'd')}
                     </div>
                     {cellEvents.map((evt, idx) => (
-                      <div key={idx} className={`text-[11px] px-2 py-1 rounded truncate font-medium ${getEventColor(evt.type)}`}>
-                        {evt.title}
+                      <div 
+                        key={idx} 
+                        onClick={(e) => openEditModal(evt, e)}
+                        className={`text-[11px] px-2 py-1 rounded truncate font-medium cursor-pointer flex justify-between items-center group ${getEventColor(evt.type)}`}
+                      >
+                        <span className="truncate">{evt.title}</span>
+                        <Trash2 size={12} className="opacity-0 group-hover:opacity-100 shrink-0 ml-1" onClick={(e) => handleDeleteEvent(evt.id, e)} />
                       </div>
                     ))}
                   </div>
@@ -141,40 +277,29 @@ export default function Calendar() {
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-80 flex flex-col gap-6 shrink-0 overflow-y-auto pb-6">
+      <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0 lg:overflow-y-auto pb-6">
         
         {/* Today's Agenda */}
         <div className="bg-white border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-semibold text-textPrimary">Today's Agenda</h3>
-            <span className="text-sm font-medium text-primary">June 9</span>
+            <span className="text-sm font-medium text-primary">{format(new Date(), 'MMM d')}</span>
           </div>
-          <div className="space-y-4">
-            <div className="flex gap-3">
-              <div className={`w-1 rounded-full ${getLineColor('followup')}`}></div>
-              <div>
-                <p className="text-sm font-semibold text-textPrimary">Call Priya Sharma</p>
-                <p className="text-xs text-textSecondary mt-0.5">10:00 AM • Follow-up</p>
-              </div>
+          {todaysEvents.length === 0 ? (
+             <p className="text-sm text-textSecondary text-center py-4 bg-gray-50 rounded-lg border border-border border-dashed">No events today. Enjoy your day!</p>
+          ) : (
+            <div className="space-y-4">
+              {todaysEvents.map(evt => (
+                <div key={evt.id} className="flex gap-3 cursor-pointer group" onClick={(e) => openEditModal(evt, e)}>
+                  <div className={`w-1 shrink-0 rounded-full ${getLineColor(evt.type)}`}></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-textPrimary truncate group-hover:text-primary transition-colors">{evt.title}</p>
+                    <p className="text-xs text-textSecondary mt-0.5">{evt.time || 'All Day'} • {evt.type}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex gap-3">
-              <div className={`w-1 rounded-full ${getLineColor('ai')}`}></div>
-              <div>
-                <p className="text-sm font-semibold text-textPrimary">VIP Campaign Review</p>
-                <p className="text-xs text-textSecondary mt-0.5">11:30 AM • AI Suggestion</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className={`w-1 rounded-full ${getLineColor('meeting')}`}></div>
-              <div>
-                <p className="text-sm font-semibold text-textPrimary">Weekly CRM Sync</p>
-                <p className="text-xs text-textSecondary mt-0.5">02:00 PM • Team</p>
-              </div>
-            </div>
-          </div>
-          <button className="w-full text-center text-primary text-sm font-medium mt-5 hover:text-blue-700 transition-colors">
-            View All Events
-          </button>
+          )}
         </div>
 
         {/* AI Assistant */}
@@ -187,7 +312,6 @@ export default function Calendar() {
             Based on customer activity, the best time to launch your <strong>Summer Sale</strong> is tomorrow between <strong>2:00 PM - 4:00 PM</strong>.
           </p>
           
-          {/* Smart Alert - Light Amber Styling */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
             <div className="flex items-center gap-2 text-amber-800 font-semibold text-[11px] uppercase tracking-wider mb-1">
               <BellRing size={14} />
@@ -198,12 +322,12 @@ export default function Calendar() {
             </p>
           </div>
 
-          <button className="w-full bg-primary hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium transition-colors shadow-sm">
-            Generate Schedule with AI
+          <button onClick={generateAISchedule} className="w-full bg-primary hover:bg-blue-700 text-white rounded-lg py-2 text-sm font-medium transition-colors shadow-sm disabled:opacity-50">
+            {loading ? 'Generating...' : 'Generate Schedule with AI'}
           </button>
         </div>
 
-        {/* AI Calendar Insight (New) */}
+        {/* AI Calendar Insight */}
         <div className="bg-purple-50 border border-purple-100 rounded-xl p-5">
           <div className="flex items-center gap-2 text-purple-700 font-semibold mb-3">
             <TrendingUp size={18} />
@@ -212,7 +336,9 @@ export default function Calendar() {
           <div className="space-y-3">
             <div>
               <p className="text-xs text-purple-600 font-medium mb-1">Recommended Launch Window</p>
-              <p className="text-sm text-purple-900 font-semibold bg-white px-2 py-1.5 rounded border border-purple-100 inline-block">Thu, June 11 • 9:00 AM</p>
+              <p className="text-sm text-purple-900 font-semibold bg-white px-2 py-1.5 rounded border border-purple-100 inline-block">
+                {format(addDays(new Date(), 2), 'EEE, MMM d')} • 9:00 AM
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-white p-2 rounded border border-purple-100">
@@ -232,16 +358,16 @@ export default function Calendar() {
           <h3 className="font-semibold text-textPrimary mb-4">This Month</h3>
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div className="bg-gray-50 rounded-lg p-3 border border-border">
-              <p className="text-[10px] font-bold text-textSecondary uppercase tracking-wider mb-1">Scheduled</p>
-              <p className="text-xl font-bold text-primary">24</p>
+              <p className="text-[10px] font-bold text-textSecondary uppercase tracking-wider mb-1">Campaigns</p>
+              <p className="text-xl font-bold text-primary">{scheduledCount}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-3 border border-border">
               <p className="text-[10px] font-bold text-textSecondary uppercase tracking-wider mb-1">Meetings</p>
-              <p className="text-xl font-bold text-textPrimary">18</p>
+              <p className="text-xl font-bold text-textPrimary">{meetingCount}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-3 border border-border">
               <p className="text-[10px] font-bold text-textSecondary uppercase tracking-wider mb-1">Follow-ups</p>
-              <p className="text-xl font-bold text-textPrimary">56</p>
+              <p className="text-xl font-bold text-textPrimary">{followupCount}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-3 border border-border">
               <p className="text-[10px] font-bold text-textSecondary uppercase tracking-wider mb-1">Rate</p>
@@ -261,6 +387,13 @@ export default function Calendar() {
         </div>
 
       </div>
+
+      <EventModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSave={handleSaveEvent}
+        eventToEdit={eventToEdit}
+      />
     </div>
   );
 }
