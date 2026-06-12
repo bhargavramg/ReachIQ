@@ -5,7 +5,8 @@ import StatCard from '../components/StatCard';
 import { appMetrics } from '../data/appMetrics';
 
 export default function Customers() {
-  const [data, setData] = useState({ customers: [], total: 0 });
+  const [customers, setCustomers] = useState([]);
+  const [total, setTotal] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ search: '', city: '', min_spent: '', max_spent: '', days_inactive: '' });
@@ -28,10 +29,16 @@ export default function Customers() {
     setLoading(true);
     try {
       const params = new URLSearchParams(filters).toString();
-      const res = await axios.get(`/api/customers?${params}`);
-      setData(res.data);
+      const response = await axios.get(`/api/customers?${params}`);
+      console.log('Customers API response:', response.data);
+      const customerList = response?.data?.customers || [];
+      console.log('Customers loaded:', customerList.length);
+      setCustomers(customerList);
+      setTotal(response?.data?.total || 0);
     } catch (e) {
       console.error(e);
+      setCustomers([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -105,10 +112,10 @@ export default function Customers() {
               <tbody className="text-sm">
                 {loading ? (
                   <tr><td colSpan="5" className="p-8 text-center text-textSecondary">Loading...</td></tr>
-                ) : data.customers.length === 0 ? (
-                  <tr><td colSpan="5" className="p-8 text-center text-textSecondary">No customers found.</td></tr>
+                ) : (customers || []).length === 0 ? (
+                  <tr><td colSpan="5" className="p-8 text-center text-textSecondary">No customers found</td></tr>
                 ) : (
-                  data.customers.map(c => (
+                  (customers || []).map(c => (
                     <tr key={c.id} className="border-b border-border hover:bg-gray-50 cursor-pointer">
                       <td className="px-4 py-3 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">
@@ -135,7 +142,7 @@ export default function Customers() {
           </div>
           
           <div className="p-4 border-t border-border flex justify-between items-center text-sm text-textSecondary">
-            <div>Showing {data.customers.length} of {data.total}</div>
+            <div>Showing {(customers || []).length} of {total}</div>
             <div className="flex gap-2">
               <button className="p-1 border border-border rounded hover:bg-gray-50"><ChevronLeft size={16} /></button>
               <button className="p-1 border border-border rounded hover:bg-gray-50"><ChevronRight size={16} /></button>
