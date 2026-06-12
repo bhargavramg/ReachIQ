@@ -175,18 +175,46 @@ Rules:
 - Include a clear call to action.
 - Use ₹ for currency if mentioning prices.
 
-Return ONLY a JSON array of exactly 3 strings.
-No markdown, no explanation, just the raw JSON array.`;
+Return ONLY valid JSON.
+Format:
+{
+  "variants": [
+    "message 1",
+    "message 2",
+    "message 3"
+  ]
+}
+
+No markdown.
+No code blocks.
+No explanations.
+Only JSON.`;
 
     let text = await callGemini(sysPrompt);
     console.log('AI raw response:', text); // Log raw AI response
 
     text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    const drafts = JSON.parse(text);
+    
+    let drafts = [];
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.variants && Array.isArray(parsed.variants)) {
+        drafts = parsed.variants;
+      } else if (Array.isArray(parsed)) {
+        drafts = parsed;
+      } else {
+        throw new Error("Missing 'variants' array in JSON");
+      }
+    } catch(err) {
+      console.error("Gemini parse error", err);
+      console.error("Raw Gemini response:", text);
+      return res.json({ error: "AI generation failed due to invalid JSON formatting. Please try again." });
+    }
+
     console.log('Parsed variants:', drafts); // Log parsed variants
 
-    if (!Array.isArray(drafts) || drafts.length === 0) {
-      throw new Error("Invalid AI response format");
+    if (drafts.length === 0) {
+      return res.json({ error: "AI failed to generate variants." });
     }
 
     res.json({ drafts });
