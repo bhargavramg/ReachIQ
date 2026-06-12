@@ -177,16 +177,37 @@ router.post('/', async (req, res) => {
       return res.json({ campaignId: campaign.id, audienceCount: 0 });
     }
 
-    // Create communications
+    // Create communications with Demo-Mode Mock Statuses
     const commsData = customers.map(c => {
       const personalizedMsg = message_template.replace(
         /\{\{name\}\}/gi, c.name
       );
+
+      let status = 'failed';
+      const rand = Math.random();
+      
+      // Dynamic mock probabilities
+      const pDelivered = 0.95 + Math.random() * 0.03; // 95-98%
+      const pOpened = 0.45 + Math.random() * 0.20;    // 45-65%
+      const pClicked = 0.10 + Math.random() * 0.15;   // 10-25%
+      
+      if (rand <= pDelivered) {
+         status = 'delivered';
+         const rand2 = Math.random();
+         if (rand2 <= pOpened) {
+            status = 'opened';
+            const rand3 = Math.random();
+            if (rand3 <= pClicked) {
+               status = 'clicked';
+            }
+         }
+      }
+
       return {
         campaignId: campaign.id,
         customerId: c.id,
         message: personalizedMsg,
-        status: 'queued'
+        status: status
       };
     });
 
@@ -202,40 +223,8 @@ router.post('/', async (req, res) => {
       }
     });
 
-    console.log('Campaign launched:', campaign.id, 
+    console.log('Campaign launched (Demo Mode):', campaign.id, 
       'audience:', customers.length);
-
-    // Fire sends async — never block response
-    setImmediate(async () => {
-      const comms = await prisma.communication.findMany({
-        where: { campaignId: campaign.id }
-      });
-
-      const results = await Promise.allSettled(
-        comms.map(comm =>
-          axios.post(
-            `${process.env.CHANNEL_SERVICE_URL}/send`,
-            {
-              communicationId: comm.id,
-              customerId: comm.customerId,
-              channel,
-              message: comm.message
-            }
-          )
-        )
-      );
-
-      const successCount = results.filter(
-        r => r.status === 'fulfilled'
-      ).length;
-
-      await prisma.campaignStats.update({
-        where: { campaignId: campaign.id },
-        data: { sent: successCount }
-      });
-
-      console.log('Sends fired:', successCount, '/', comms.length);
-    });
 
     res.json({ 
       campaignId: campaign.id, 
