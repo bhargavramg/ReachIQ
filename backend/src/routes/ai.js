@@ -4,21 +4,7 @@ const axios = require('axios');
 
 async function callGemini(prompt) {
   console.log('Gemini key exists:', !!process.env.GEMINI_API_KEY)
-  
-  // Intercept the 4 specific testing prompts to guarantee flow validation during 429 rate limit
-  const lower = prompt.toLowerCase();
-  if (lower.includes("fashion buyers from chennai") || (lower.includes("fashion") && lower.includes("chennai") && lower.includes("segment rules"))) {
-    return '[{"field":"tags","operator":"contains","value":"fashion"},{"field":"city","operator":"eq","value":"Chennai"}]';
-  }
-  if (lower.includes("vip customers from mumbai") || (lower.includes("vip") && lower.includes("mumbai") && lower.includes("segment rules"))) {
-    return '[{"field":"tags","operator":"contains","value":"vip"},{"field":"city","operator":"eq","value":"Mumbai"}]';
-  }
-  if (lower.includes("inactive for 90 days") || (lower.includes("inactive") && lower.includes("90") && lower.includes("segment rules"))) {
-    return '[{"field":"days_since_last_order","operator":"gt","value":90}]';
-  }
-  if (lower.includes("high spenders over 10000") || (lower.includes("spender") && lower.includes("10000") && lower.includes("segment rules"))) {
-    return '[{"field":"total_spent","operator":"gt","value":10000}]';
-  }
+
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
   const response = await axios.post(url, {
@@ -42,47 +28,41 @@ router.get('/test', (req, res) => {
 router.post('/segment', async (req, res) => {
   try {
     const { prompt } = req.body;
-    console.log('AI segment prompt received:', prompt);
+    console.log('User prompt:', prompt); // Added requested log
 
-    const geminiPrompt = `You are a CRM filter builder API.
-Convert the user description into a JSON filter array.
+    const geminiPrompt = `You are a strict CRM filter generator API.
+Convert the user's natural language query into a JSON array of segment filters.
 
-STRICT RULES:
-- Return ONLY a raw JSON array
-- No markdown, no backticks, no explanation
-- Array starts with [ and ends with ]
-- Each object has exactly: field, operator, value
+CRITICAL RULES:
+1. Return ONLY a raw JSON array. No markdown, no text, no backticks.
+2. The output must start with [ and end with ].
+3. Each object in the array must have exactly three keys: "field", "operator", "value".
+4. Do NOT output example filters if they do not match the user query.
 
-AVAILABLE FIELDS:
-- "city" with operator "eq" 
-  values: Mumbai, Delhi, Bangalore, Chennai, 
-  Hyderabad, Pune, Kolkata, Jaipur, Ahmedabad, Surat
-- "tags" with operator "contains"
-  values: vip, loyal, at-risk, new, fashion, 
-  beauty, electronics, discount-lover
-- "total_spent" with operators: gt, lt, gte, lte
-- "order_count" with operators: gt, lt, gte, lte  
-- "days_since_last_order" with operators: gt, lt
-- "score" with operators: gt, lt, gte, lte
+AVAILABLE FIELDS & OPERATORS:
+- "city" (operator: "equals") -> values: Mumbai, Delhi, Bangalore, Chennai, Hyderabad, Pune, Kolkata, Jaipur, Ahmedabad, Surat
+- "tags" (operator: "contains") -> values: vip, loyal, at-risk, new, fashion, beauty, electronics, discount-lover
+- "totalSpent" (operators: "gt", "lt", "gte", "lte") -> numeric values
+- "orderCount" (operators: "gt", "lt", "gte", "lte") -> numeric values
+- "score" (operators: "gt", "lt", "gte", "lte") -> numeric values
+- "daysSinceLastOrder" (operators: "gt", "lt") -> numeric values
 
 EXAMPLES:
-"fashion buyers from Chennai"
-[{"field":"city","operator":"eq","value":"Chennai"},{"field":"tags","operator":"contains","value":"fashion"}]
+Input: "Customers spending over 10000"
+Output: [{"field":"totalSpent","operator":"gt","value":10000}]
 
-"VIP customers from Mumbai"
-[{"field":"city","operator":"eq","value":"Mumbai"},{"field":"tags","operator":"contains","value":"vip"}]
+Input: "Fashion buyers from Chennai"
+Output: [{"field":"tags","operator":"contains","value":"fashion"},{"field":"city","operator":"equals","value":"Chennai"}]
 
-"inactive customers for 90 days"
-[{"field":"days_since_last_order","operator":"gt","value":90}]
+Input: "VIP customers"
+Output: [{"field":"score","operator":"gte","value":90}]
 
-"high value customers spending over 10000"
-[{"field":"total_spent","operator":"gt","value":10000}]
-
-NOW CONVERT: "${prompt}"
-RESPOND WITH ONLY THE JSON ARRAY:`;
+Now, convert the following input. Return ONLY the JSON array.
+Input: "${prompt}"
+Output:`;
 
     const rawText = await callGemini(geminiPrompt);
-    console.log('Gemini raw response:', rawText);
+    console.log('AI raw response:', rawText); // Added requested log
 
     // Aggressive cleaning
     let cleaned = rawText
@@ -100,10 +80,9 @@ RESPOND WITH ONLY THE JSON ARRAY:`;
     }
 
     const jsonStr = cleaned.substring(start, end + 1);
-    console.log('Cleaned JSON string:', jsonStr);
 
     const filters = JSON.parse(jsonStr);
-    console.log('Final parsed filters:', JSON.stringify(filters));
+    console.log('Parsed filters:', JSON.stringify(filters, null, 2)); // Added requested log
 
     if (!Array.isArray(filters)) {
       console.error('Parsed result is not an array:', filters);
