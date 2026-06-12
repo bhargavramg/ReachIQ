@@ -149,30 +149,47 @@ Output:`;
 
 router.post('/draft', async (req, res) => {
   try {
-    const { segmentDescription, channel, brandName } = req.body;
-    const sysPrompt = `You are a marketing copywriter for an Indian D2C brand called ${brandName}. Write exactly 2 short personalized campaign message variants for ${channel}.
+    const { segmentDescription, prompt, channel, brandName } = req.body;
+    console.log('AI Draft Prompt received:', prompt); // Log User prompt
+
+    const sysPrompt = `You are a marketing copywriter for an Indian D2C brand called ${brandName}. Write exactly 3 short personalized campaign message variants for ${channel}.
 Target audience: ${segmentDescription}
+Campaign Goal / Details: ${prompt || 'Create an engaging message for this audience'}
 
 Rules:
-- Maximum 160 characters each
-- Use {{name}} for customer name personalization
-- Warm, friendly, conversational Indian tone
-- Include a clear call to action
-- Use ₹ for currency if mentioning prices
+- Generate exactly 3 unique variants.
+- Visibly include details from the user prompt (discount percentage, coupon code, cashback amount, expiry date, segment).
+- Maximum 160 characters each.
+- Use {{name}} for customer name personalization.
+- Warm, friendly, conversational Indian tone.
+- Include a clear call to action.
+- Use ₹ for currency if mentioning prices.
 
-Return ONLY a JSON array of exactly 2 strings.
+Return ONLY a JSON array of exactly 3 strings.
 No markdown, no explanation, just the raw JSON array.`;
 
     let text = await callGemini(sysPrompt);
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    console.log('AI raw response:', text); // Log raw AI response
+
+    text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     const drafts = JSON.parse(text);
+    console.log('Parsed variants:', drafts); // Log parsed variants
+
+    if (!Array.isArray(drafts) || drafts.length === 0) {
+      throw new Error("Invalid AI response format");
+    }
+
     res.json({ drafts });
   } catch (error) {
-    console.error(error);
-    res.json({ drafts: [
-      'Hi {{name}}, check our latest offers!',
-      'Hey {{name}}, exclusive deals just for you!'
-    ] });
+    console.error('Draft generation error:', error.message);
+    res.json({ 
+      error: "AI generation unavailable. Using fallback templates.", 
+      drafts: [
+        'Hi {{name}}, check our latest offers!',
+        'Hey {{name}}, exclusive deals just for you!',
+        'Hi {{name}}, don\'t miss out on our special discounts!'
+      ] 
+    });
   }
 });
 

@@ -57,11 +57,16 @@ export default function Campaigns() {
     try {
       const res = await axios.post('/api/ai/draft', {
         segmentDescription: audience.audienceName,
+        prompt: formData.prompt,
         channel: formData.channel,
         brandName: 'ReachIQ'
       });
       setDrafts(res.data.drafts);
-      toast.success("AI draft variants generated successfully.");
+      if (res.data.error) {
+        toast.error(res.data.error);
+      } else {
+        toast.success("AI draft variants generated successfully.");
+      }
     } catch(e) {
       console.error(e);
       toast.error("Error generating AI variants.");
