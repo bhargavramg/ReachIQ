@@ -6,23 +6,31 @@ function fallbackRuleParser(prompt) {
   if (!prompt) return null;
   const lower = prompt.toLowerCase();
   
-  const spendingMatch = lower.match(/customers spending over (\d+)/);
+  const spendingMatch = lower.match(/customers spending over \D*(\d+)/);
   if (spendingMatch) {
     return [{ field: "totalSpent", operator: "gt", value: parseInt(spendingMatch[1], 10) }];
   }
 
-  if (lower.includes("fashion buyers from chennai")) return [
-    { field: "tags", operator: "contains", value: "fashion" },
-    { field: "city", operator: "equals", value: "Chennai" }
-  ];
+  const scoreMatch = lower.match(/customers with score above \D*(\d+)/);
+  if (scoreMatch) {
+    return [{ field: "score", operator: "gt", value: parseInt(scoreMatch[1], 10) }];
+  }
 
-  if (lower.includes("customers from chennai")) return [{ field: "city", operator: "equals", value: "Chennai" }];
-  if (lower.includes("customers from bangalore")) return [{ field: "city", operator: "equals", value: "Bangalore" }];
-  if (lower.includes("customers from mumbai")) return [{ field: "city", operator: "equals", value: "Mumbai" }];
-  
-  if (lower.includes("vip customers")) return [{ field: "score", operator: "gte", value: 90 }];
-  if (lower.includes("at risk customers") || lower.includes("at-risk customers")) return [{ field: "tags", operator: "contains", value: "at-risk" }];
-  if (lower.includes("inactive customers")) return [{ field: "daysSinceLastOrder", operator: "gt", value: 90 }];
+  const ordersMatch = lower.match(/customers with more than \D*(\d+) orders/);
+  if (ordersMatch) {
+    return [{ field: "orderCount", operator: "gt", value: parseInt(ordersMatch[1], 10) }];
+  }
+
+  const inactiveMatch = lower.match(/inactive customers for \D*(\d+) days/);
+  if (inactiveMatch) {
+    return [{ field: "daysSinceLastOrder", operator: "gt", value: parseInt(inactiveMatch[1], 10) }];
+  }
+
+  const cityMatch = lower.match(/customers from ([a-z]+)/);
+  if (cityMatch) {
+    const city = cityMatch[1].charAt(0).toUpperCase() + cityMatch[1].slice(1);
+    return [{ field: "city", operator: "equals", value: city }];
+  }
   
   return null;
 }
@@ -72,7 +80,6 @@ CRITICAL RULES:
 
 AVAILABLE FIELDS & OPERATORS:
 - "city" (operator: "equals") -> values: Mumbai, Delhi, Bangalore, Chennai, Hyderabad, Pune, Kolkata, Jaipur, Ahmedabad, Surat
-- "tags" (operator: "contains") -> values: vip, loyal, at-risk, new, fashion, beauty, electronics, discount-lover
 - "totalSpent" (operators: "gt", "lt", "gte", "lte") -> numeric values
 - "orderCount" (operators: "gt", "lt", "gte", "lte") -> numeric values
 - "score" (operators: "gt", "lt", "gte", "lte") -> numeric values
@@ -82,11 +89,17 @@ EXAMPLES:
 Input: "Customers spending over 10000"
 Output: [{"field":"totalSpent","operator":"gt","value":10000}]
 
-Input: "Fashion buyers from Chennai"
-Output: [{"field":"tags","operator":"contains","value":"fashion"},{"field":"city","operator":"equals","value":"Chennai"}]
+Input: "Customers with score above 80"
+Output: [{"field":"score","operator":"gt","value":80}]
 
-Input: "VIP customers"
-Output: [{"field":"score","operator":"gte","value":90}]
+Input: "Customers with more than 10 orders"
+Output: [{"field":"orderCount","operator":"gt","value":10}]
+
+Input: "Inactive customers for 90 days"
+Output: [{"field":"daysSinceLastOrder","operator":"gt","value":90}]
+
+Input: "Customers from Chennai"
+Output: [{"field":"city","operator":"equals","value":"Chennai"}]
 
 Now, convert the following input. Return ONLY the JSON array.
 Input: "${prompt}"

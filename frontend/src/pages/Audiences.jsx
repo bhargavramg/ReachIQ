@@ -258,7 +258,7 @@ export default function Audiences() {
           <div className="mb-6">
             <div className="text-xs text-textSecondary mb-2">Try these examples:</div>
             <div className="flex flex-wrap gap-2">
-              {["Find inactive VIP customers", "Fashion buyers from Chennai", "Customers spending over ₹10000"].map(ex => (
+              {["Customers spending over ₹10000", "Customers with score above 80", "Customers with more than 10 orders", "Inactive customers for 90 days", "Customers from Chennai"].map(ex => (
                 <button 
                   key={ex} 
                   onClick={() => handleExampleClick(ex)}
