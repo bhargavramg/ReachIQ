@@ -14,7 +14,7 @@ export default function Customers() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ search: '', city: '', min_spent: '', max_spent: '', days_inactive: '' });
+  const [filters, setFilters] = useState({ search: '', city: '', min_spent: '', max_spent: '', days_inactive: '', page: 1 });
   
   // Modals state
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
@@ -62,7 +62,19 @@ export default function Customers() {
   };
 
   const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+    setFilters({ ...filters, [e.target.name]: e.target.value, page: 1 });
+  };
+
+  const handlePrevPage = () => {
+    if (filters.page > 1) {
+      setFilters({ ...filters, page: filters.page - 1 });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (customers.length === 50) { // assuming 50 is the take limit
+      setFilters({ ...filters, page: filters.page + 1 });
+    }
   };
 
   const exportData = (type) => {
@@ -227,10 +239,18 @@ export default function Customers() {
           </div>
           
           <div className="p-4 border-t border-border flex justify-between items-center text-sm text-textSecondary bg-gray-50">
-            <div>Showing {(customers || []).length} of {total}</div>
+            <div>Showing {customers.length > 0 ? (filters.page - 1) * 50 + 1 : 0} to {Math.min(filters.page * 50, total)} of {total}</div>
             <div className="flex gap-2">
-              <button className="p-1.5 border border-border rounded-md hover:bg-white bg-transparent transition-colors"><ChevronLeft size={16} /></button>
-              <button className="p-1.5 border border-border rounded-md hover:bg-white bg-transparent transition-colors"><ChevronRight size={16} /></button>
+              <button 
+                onClick={handlePrevPage} 
+                disabled={filters.page === 1}
+                className="p-1.5 border border-border rounded-md hover:bg-white bg-transparent transition-colors disabled:opacity-50"
+              ><ChevronLeft size={16} /></button>
+              <button 
+                onClick={handleNextPage} 
+                disabled={customers.length < 50}
+                className="p-1.5 border border-border rounded-md hover:bg-white bg-transparent transition-colors disabled:opacity-50"
+              ><ChevronRight size={16} /></button>
             </div>
           </div>
         </div>
