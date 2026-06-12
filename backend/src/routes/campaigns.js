@@ -18,9 +18,20 @@ router.get('/', async (req, res) => {
 });
 router.get('/funnel', async (req, res) => {
   try {
-    const stats = await prisma.campaignStats.aggregate({
-      _sum: { sent: true, delivered: true, opened: true, clicked: true }
+    const campaigns = await prisma.campaign.findMany({
+      where: { launchedAt: { not: null } }
     });
+    
+    let totalSent = 0;
+    campaigns.forEach(c => totalSent += c.audienceCount);
+
+    const counts = await prisma.communication.groupBy({
+      by: ['status'],
+      _count: true
+    });
+
+    const breakdown = { queued: 0, sent: 0, delivered: 0, opened: 0, read: 0, clicked: 0, failed: 0 };
+    counts.forEach(c => { breakdown[c.status] = c._count; });
     
     const earliestCampaign = await prisma.campaign.findFirst({
       where: { launchedAt: { not: null } },
@@ -28,17 +39,17 @@ router.get('/funnel', async (req, res) => {
     });
     
     let ordered = 0;
-    if (earliestCampaign && earliestCampaign.launchedAt && stats._sum.sent > 0) {
+    if (earliestCampaign && earliestCampaign.launchedAt && totalSent > 0) {
       ordered = await prisma.order.count({
         where: { orderedAt: { gte: earliestCampaign.launchedAt } }
       });
     }
 
     res.json({
-      sent: stats._sum.sent || 0,
-      delivered: stats._sum.delivered || 0,
-      opened: stats._sum.opened || 0,
-      clicked: stats._sum.clicked || 0,
+      sent: totalSent,
+      delivered: breakdown.delivered + breakdown.opened + breakdown.read + breakdown.clicked,
+      opened: breakdown.opened + breakdown.read + breakdown.clicked,
+      clicked: breakdown.clicked,
       ordered: ordered
     });
   } catch (error) {
@@ -84,6 +95,14 @@ router.get('/:id/stats', async (req, res) => {
     counts.forEach(c => {
       breakdown[c.status] = c._count;
     });
+
+    campaign.stats = {
+      sent: campaign.audienceCount,
+      delivered: breakdown.delivered + breakdown.opened + breakdown.read + breakdown.clicked,
+      opened: breakdown.opened + breakdown.read + breakdown.clicked,
+      clicked: breakdown.clicked,
+      failed: breakdown.failed
+    };
 
     res.json({ 
       campaign, 

@@ -27,16 +27,24 @@ export default function CampaignDetail() {
     setInsightLoading(true);
     fetchStats(currentPage).then(d => {
       if (d && d.campaign && d.campaign.stats) {
-        axios.post('/api/ai/insight', { 
-          campaignName: d.campaign.name, 
-          stats: d.campaign.stats 
-        }).then(res => {
-          setInsight(res.data.insight);
+        const s = d.campaign.stats;
+        const analyticsPending = s.sent > 0 && s.delivered === 0 && s.failed === 0;
+        
+        if (analyticsPending) {
+          setInsight('');
           setInsightLoading(false);
-        }).catch(err => {
-          console.error(err);
-          setInsightLoading(false);
-        });
+        } else {
+          axios.post('/api/ai/insight', { 
+            campaignName: d.campaign.name, 
+            stats: s 
+          }).then(res => {
+            setInsight(res.data.insight);
+            setInsightLoading(false);
+          }).catch(err => {
+            console.error(err);
+            setInsightLoading(false);
+          });
+        }
       } else {
         setInsightLoading(false);
       }
@@ -98,7 +106,9 @@ export default function CampaignDetail() {
         <div className="flex items-center gap-2 font-bold text-primary mb-2 text-sm">
           <Sparkles size={16} /> AI Performance Insight
         </div>
-        {insightLoading || !insight ? (
+        {(stats.sent > 0 && stats.delivered === 0 && stats.failed === 0) ? (
+          <p className="text-textSecondary text-sm italic">Analytics Pending: Delivery data is currently being processed. Check back soon for AI insights.</p>
+        ) : insightLoading || !insight ? (
           <div className="space-y-2 animate-pulse py-1">
             <div className="h-4 bg-blue-200/40 rounded w-3/4"></div>
             <div className="h-4 bg-blue-200/40 rounded w-1/2"></div>
@@ -111,27 +121,33 @@ export default function CampaignDetail() {
       {/* Funnel Diagram */}
       <div className="bg-card border border-border rounded-xl p-6">
         <h3 className="font-bold text-lg mb-6 text-textPrimary">Delivery Funnel</h3>
-        <div className="flex items-center justify-between text-center relative">
-          <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -z-10 -translate-y-1/2"></div>
-          
-          {[
-            { label: 'Sent', val: stats.sent, color: 'text-blue-600', bg: 'bg-blue-100' },
-            { label: 'Delivered', val: stats.delivered, color: 'text-green-600', bg: 'bg-green-100' },
-            { label: 'Opened', val: stats.opened, color: 'text-amber-600', bg: 'bg-amber-100' },
-            { label: 'Clicked', val: stats.clicked, color: 'text-purple-600', bg: 'bg-purple-100' },
-            { label: 'Failed', val: stats.failed, color: 'text-red-600', bg: 'bg-red-100' }
-          ].map((step) => (
-            <div key={step.label} className="bg-card px-4 z-10">
-              <div className={`w-16 h-16 mx-auto rounded-full ${step.bg} ${step.color} flex items-center justify-center font-bold text-lg mb-2 border-4 border-card`}>
-                {step.val || 0}
+        {(stats.sent > 0 && stats.delivered === 0 && stats.failed === 0) ? (
+          <div className="text-center py-8 text-textSecondary italic">
+            Analytics Pending
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-center relative">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -z-10 -translate-y-1/2"></div>
+            
+            {[
+              { label: 'Sent', val: stats.sent, color: 'text-blue-600', bg: 'bg-blue-100' },
+              { label: 'Delivered', val: stats.delivered, color: 'text-green-600', bg: 'bg-green-100' },
+              { label: 'Opened', val: stats.opened, color: 'text-amber-600', bg: 'bg-amber-100' },
+              { label: 'Clicked', val: stats.clicked, color: 'text-purple-600', bg: 'bg-purple-100' },
+              { label: 'Failed', val: stats.failed, color: 'text-red-600', bg: 'bg-red-100' }
+            ].map((step) => (
+              <div key={step.label} className="bg-card px-4 z-10">
+                <div className={`w-16 h-16 mx-auto rounded-full ${step.bg} ${step.color} flex items-center justify-center font-bold text-lg mb-2 border-4 border-card`}>
+                  {step.val || 0}
+                </div>
+                <div className="text-sm font-semibold text-textPrimary">{step.label}</div>
+                <div className="text-xs text-textSecondary font-medium mt-0.5">
+                  {stats.sent > 0 ? ((step.val / stats.sent) * 100).toFixed(1) : 0}%
+                </div>
               </div>
-              <div className="text-sm font-semibold text-textPrimary">{step.label}</div>
-              <div className="text-xs text-textSecondary font-medium mt-0.5">
-                {stats.sent > 0 ? ((step.val / stats.sent) * 100).toFixed(1) : 0}%
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Paginated Live Message Feed Table */}
