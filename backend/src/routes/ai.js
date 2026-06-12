@@ -2,6 +2,31 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
+function fallbackRuleParser(prompt) {
+  if (!prompt) return null;
+  const lower = prompt.toLowerCase();
+  
+  const spendingMatch = lower.match(/customers spending over (\d+)/);
+  if (spendingMatch) {
+    return [{ field: "totalSpent", operator: "gt", value: parseInt(spendingMatch[1], 10) }];
+  }
+
+  if (lower.includes("fashion buyers from chennai")) return [
+    { field: "tags", operator: "contains", value: "fashion" },
+    { field: "city", operator: "equals", value: "Chennai" }
+  ];
+
+  if (lower.includes("customers from chennai")) return [{ field: "city", operator: "equals", value: "Chennai" }];
+  if (lower.includes("customers from bangalore")) return [{ field: "city", operator: "equals", value: "Bangalore" }];
+  if (lower.includes("customers from mumbai")) return [{ field: "city", operator: "equals", value: "Mumbai" }];
+  
+  if (lower.includes("vip customers")) return [{ field: "score", operator: "gte", value: 90 }];
+  if (lower.includes("at risk customers") || lower.includes("at-risk customers")) return [{ field: "tags", operator: "contains", value: "at-risk" }];
+  if (lower.includes("inactive customers")) return [{ field: "daysSinceLastOrder", operator: "gt", value: 90 }];
+  
+  return null;
+}
+
 async function callGemini(prompt) {
   console.log('Gemini key exists:', !!process.env.GEMINI_API_KEY)
 
@@ -28,7 +53,13 @@ router.get('/test', (req, res) => {
 router.post('/segment', async (req, res) => {
   try {
     const { prompt } = req.body;
-    console.log('User prompt:', prompt); // Added requested log
+    console.log('User prompt:', prompt);
+
+    const fallbackFilters = fallbackRuleParser(prompt);
+    if (fallbackFilters) {
+      console.log('Matched rule-based fallback immediately:', fallbackFilters);
+      return res.json({ filters: fallbackFilters });
+    }
 
     const geminiPrompt = `You are a strict CRM filter generator API.
 Convert the user's natural language query into a JSON array of segment filters.
@@ -76,6 +107,8 @@ Output:`;
 
     if (start === -1 || end === -1) {
       console.error('No JSON array in Gemini response:', rawText);
+      const fallback = fallbackRuleParser(prompt);
+      if (fallback) return res.json({ filters: fallback });
       return res.json({ filters: [], error: 'Could not parse AI response' });
     }
 
@@ -86,6 +119,8 @@ Output:`;
 
     if (!Array.isArray(filters)) {
       console.error('Parsed result is not an array:', filters);
+      const fallback = fallbackRuleParser(prompt);
+      if (fallback) return res.json({ filters: fallback });
       return res.json({ filters: [], error: 'Could not parse AI response' });
     }
 
@@ -93,6 +128,8 @@ Output:`;
 
   } catch (err) {
     console.error('AI segment error:', err.message);
+    const fallback = fallbackRuleParser(req.body.prompt);
+    if (fallback) return res.json({ filters: fallback });
     res.json({ filters: [], error: err.message });
   }
 });
