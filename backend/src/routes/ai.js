@@ -35,7 +35,7 @@ function fallbackRuleParser(prompt) {
   return null;
 }
 
-async function callGemini(prompt) {
+async function callGemini(prompt, isJson = false) {
   console.log('Gemini key exists:', !!process.env.GEMINI_API_KEY);
 
   const payload = {
@@ -47,6 +47,10 @@ async function callGemini(prompt) {
       maxOutputTokens: 1000 
     }
   };
+
+  if (isJson) {
+    payload.generationConfig.responseMimeType = "application/json";
+  }
 
   console.log('Gemini request payload:', JSON.stringify(payload, null, 2));
 
@@ -115,7 +119,7 @@ Now, convert the following input. Return ONLY the JSON array.
 Input: "${prompt}"
 Output:`;
 
-    const rawText = await callGemini(geminiPrompt);
+    const rawText = await callGemini(geminiPrompt, true);
     console.log('AI raw response:', rawText); // Added requested log
 
     // Aggressive cleaning
@@ -190,7 +194,7 @@ No code blocks.
 No explanations.
 Only JSON.`;
 
-    let text = await callGemini(sysPrompt);
+    let text = await callGemini(sysPrompt, true);
     console.log('AI raw response:', text); // Log raw AI response
 
     text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
