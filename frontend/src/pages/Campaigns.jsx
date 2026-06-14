@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Send, Users, Activity, BarChart, Settings2, Smartphone, Mail, MessageSquare, Loader2, Info } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useAppStats from '../hooks/useAppStats';
@@ -33,7 +34,7 @@ export default function Campaigns() {
     message: ''
   });
   
-  const [drafts, setDrafts] = useState([]);
+  const [variants, setVariants] = useState([]);
 
   useEffect(() => {
     if (location.state) {
@@ -53,7 +54,7 @@ export default function Campaigns() {
       return;
     }
     setLoadingAI(true);
-    setDrafts([]);
+    setVariants([]);
     try {
       const res = await axios.post('/api/ai/draft', {
         segmentDescription: audience.audienceName,
@@ -61,7 +62,8 @@ export default function Campaigns() {
         channel: formData.channel,
         brandName: 'ReachIQ'
       });
-      setDrafts(res.data.drafts);
+      console.log("Draft response", res.data);
+      setVariants(res.data.drafts);
       if (res.data.error) {
         toast.error(res.data.error);
       } else {
@@ -140,6 +142,7 @@ export default function Campaigns() {
   };
 
   return (
+    <ErrorBoundary>
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-textPrimary mb-1">Campaign Studio</h1>
@@ -284,15 +287,16 @@ export default function Campaigns() {
             </div>
 
             {/* AI variants container */}
-            {drafts.length > 0 && (
+            {console.log("Variants state:", variants)}
+            {(Array.isArray(variants) ? variants : []).length > 0 && (
               <div className="space-y-3 bg-page p-4 border border-border rounded-xl">
                 <h4 className="text-[11px] font-bold text-textSecondary uppercase tracking-wider">AI Generated Copy Options</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {drafts.map((draft, idx) => (
+                  {(Array.isArray(variants) ? variants : []).map((variant, idx) => (
                     <div key={idx} className="border border-blue-100 bg-blue-50/20 rounded-lg p-3.5 flex flex-col justify-between hover:border-blue-200 transition-colors">
-                      <p className="text-xs text-textPrimary leading-relaxed mb-4 italic font-medium">"{draft}"</p>
+                      <p className="text-xs text-textPrimary leading-relaxed mb-4 italic font-medium">"{variant}"</p>
                       <button 
-                        onClick={()=>handleUseVariant(draft)} 
+                        onClick={()=>handleUseVariant(variant)} 
                         className="w-full bg-white border border-blue-200 text-primary py-1.5 rounded-md text-xs font-semibold hover:bg-blue-50 transition-colors"
                       >
                         Use This Variant
@@ -350,5 +354,6 @@ export default function Campaigns() {
         </table>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
