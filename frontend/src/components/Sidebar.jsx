@@ -1,6 +1,6 @@
 import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserPlus, Megaphone, BarChart3, Bot, Network, Settings, HelpCircle, Plus, Calendar } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, Users, UserPlus, Megaphone, BarChart3, Bot, Network, Settings, HelpCircle, Calendar } from 'lucide-react';
 import ReachIQBrand from './ReachIQBrand';
 
 const NavItem = ({ to, icon: Icon, label }) => (
@@ -20,34 +20,12 @@ const NavItem = ({ to, icon: Icon, label }) => (
 );
 
 export default function Sidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleNewCampaign = () => {
-    if (location.pathname === '/campaigns') {
-      const promptInput = document.getElementById('campaign-prompt');
-      if (promptInput) {
-        promptInput.focus();
-        promptInput.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      navigate('/campaigns', { state: { focusPrompt: true } });
-    }
-  };
-
   return (
     <div className="w-64 bg-card border-r border-border h-full flex flex-col">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
           <ReachIQBrand iconSize={28} />
         </div>
-        
-        <button 
-          onClick={handleNewCampaign}
-          className="w-full bg-primary hover:bg-blue-700 text-white rounded-lg py-2 flex items-center justify-center gap-2 text-sm font-medium transition-colors mb-6 shadow-sm"
-        >
-          <Plus size={16} /> New Campaign
-        </button>
 
         <div className="space-y-6">
           <div>
