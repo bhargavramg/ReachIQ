@@ -11,6 +11,8 @@ import Analytics from './pages/Analytics';
 import AICopilot from './pages/AICopilot';
 import Architecture from './pages/Architecture';
 import Calendar from './pages/Calendar';
+import PlaceholderPage from './pages/PlaceholderPage';
+import { Settings, HelpCircle } from 'lucide-react';
 import { ToastProvider } from './context/ToastContext';
 
 function Layout({ children }) {
@@ -41,6 +43,8 @@ function App() {
           <Route path="/calendar" element={<Layout><Calendar /></Layout>} />
           <Route path="/ai-copilot" element={<Layout><AICopilot /></Layout>} />
           <Route path="/architecture" element={<Layout><Architecture /></Layout>} />
+          <Route path="/settings" element={<Layout><PlaceholderPage title="Settings" message="Settings module coming soon." icon={Settings} /></Layout>} />
+          <Route path="/support" element={<Layout><PlaceholderPage title="Help" message="Documentation and support center coming soon." icon={HelpCircle} /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
