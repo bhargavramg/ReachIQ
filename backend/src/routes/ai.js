@@ -44,7 +44,7 @@ async function callGemini(prompt, isJson = false) {
     }],
     generationConfig: { 
       temperature: 0.3, 
-      maxOutputTokens: 1000 
+      maxOutputTokens: 4000 
     }
   };
 
@@ -56,15 +56,33 @@ async function callGemini(prompt, isJson = false) {
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
   
-  try {
-    const response = await axios.post(url, payload, {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    console.log('Gemini response:', JSON.stringify(response.data, null, 2));
-    return response.data.candidates[0].content.parts[0].text;
-  } catch (error) {
-    console.error('Error response from Gemini:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
-    throw error;
+  let retries = 3;
+  let delay = 1000;
+  
+  while (retries > 0) {
+    try {
+      const response = await axios.post(url, payload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('Gemini response:', JSON.stringify(response.data, null, 2));
+      return response.data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      const status = error.response ? error.response.status : null;
+      // Retry on 503 Service Unavailable, 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout, and 429 Too Many Requests
+      if (status === 503 || status === 429 || (status >= 500 && status <= 599)) {
+        console.warn(`Gemini API returned ${status}. Retries left: ${retries - 1}. Waiting ${delay}ms...`);
+        retries--;
+        if (retries === 0) {
+          console.error('Error response from Gemini after retries:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        console.error('Error response from Gemini:', error.response ? JSON.stringify(error.response.data, null, 2) : error.message);
+        throw error;
+      }
+    }
   }
 }
 
@@ -201,16 +219,46 @@ Only JSON.`;
     
     let drafts = [];
     try {
-      const parsed = JSON.parse(text);
+      let jsonStr = text;
+      const startObj = text.indexOf('{');
+      const endObj = text.lastIndexOf('}');
+      const startArr = text.indexOf('[');
+      const endArr = text.lastIndexOf(']');
+      
+      if (startObj !== -1 && endObj !== -1 && (startArr === -1 || startObj < startArr)) {
+        jsonStr = text.substring(startObj, endObj + 1);
+      } else if (startArr !== -1 && endArr !== -1) {
+        jsonStr = text.substring(startArr, endArr + 1);
+      }
+      
+      if (!jsonStr) {
+        throw new Error("Empty or invalid JSON string");
+      }
+
+      const parsed = JSON.parse(jsonStr);
+      
       if (parsed.variants && Array.isArray(parsed.variants)) {
         drafts = parsed.variants;
       } else if (Array.isArray(parsed)) {
         drafts = parsed;
       } else {
-        throw new Error("Missing 'variants' array in JSON");
+        const arrays = Object.values(parsed).filter(val => Array.isArray(val));
+        if (arrays.length > 0) {
+          drafts = arrays[0];
+        } else {
+          throw new Error("Missing 'variants' array in JSON");
+        }
       }
+
+      drafts = drafts.map(d => {
+        if (typeof d === 'string') return d;
+        if (typeof d === 'object' && d !== null) {
+          return d.message || d.text || d.variant || d.body || JSON.stringify(d);
+        }
+        return String(d);
+      });
     } catch(err) {
-      console.error("Gemini parse error", err);
+      console.error("Gemini parse error:", err.message);
       console.error("Raw Gemini response:", text);
       return res.json({ error: "AI generation failed due to invalid JSON formatting. Please try again." });
     }
