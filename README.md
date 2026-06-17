@@ -121,6 +121,8 @@ AI-powered assistant capable of:
 
 # System Architecture
 
+<img src="./README/screenshots/10-system-architecture.png" width="100%" />
+
 User
 ↓
 React Frontend
@@ -135,13 +137,48 @@ Analytics & Insights
 
 ---
 
+---
+
+# Product Walkthrough
+
+Here is a visual overview of the ReachIQ platform:
+
+### Dashboard
+<img src="./README/screenshots/01-dashboard.png" width="100%" />
+
+### Customers
+<img src="./README/screenshots/02-customers.png" width="100%" />
+
+### Audience Builder
+<img src="./README/screenshots/03-audience-builder.png" width="100%" />
+
+### Audience Preview
+<img src="./README/screenshots/04-audience-preview.png" width="100%" />
+
+### Campaign Creation
+<img src="./README/screenshots/05-campaign-creation.png" width="100%" />
+
+### AI Message Generation
+<img src="./README/screenshots/06-ai-message-generation.png" width="100%" />
+
+### Campaign Launch
+<img src="./README/screenshots/07-campaign-launch.png" width="100%" />
+
+### Campaign Analytics
+<img src="./README/screenshots/08-campaign-analytics.png" width="100%" />
+
+### AI Copilot
+<img src="./README/screenshots/09-ai-copilot.png" width="100%" />
+
+---
+
 # End-to-End Workflow
 
 ## Step 1 – Customer Intelligence
 
 View customer data, spending patterns, engagement metrics, and customer scores.
 
-[Screenshot 1 Here]
+<img src="./README/screenshots/02-customers.png" width="100%" />
 
 ---
 
@@ -153,7 +190,7 @@ Example:
 
 "Customers spending over ₹10000"
 
-[Screenshot 2 Here]
+<img src="./README/screenshots/03-audience-builder.png" width="100%" />
 
 ---
 
@@ -161,7 +198,7 @@ Example:
 
 Preview matching customers before campaign launch.
 
-[Screenshot 3 Here]
+<img src="./README/screenshots/04-audience-preview.png" width="100%" />
 
 ---
 
@@ -169,7 +206,7 @@ Preview matching customers before campaign launch.
 
 Create a campaign and choose communication channels.
 
-[Screenshot 4 Here]
+<img src="./README/screenshots/05-campaign-creation.png" width="100%" />
 
 ---
 
@@ -177,7 +214,7 @@ Create a campaign and choose communication channels.
 
 Generate multiple personalized campaign variants using Gemini AI.
 
-[Screenshot 5 Here]
+<img src="./README/screenshots/06-ai-message-generation.png" width="100%" />
 
 ---
 
@@ -185,7 +222,7 @@ Generate multiple personalized campaign variants using Gemini AI.
 
 Launch campaign to selected audience.
 
-[Screenshot 6 Here]
+<img src="./README/screenshots/07-campaign-launch.png" width="100%" />
 
 ---
 
@@ -193,7 +230,7 @@ Launch campaign to selected audience.
 
 Monitor campaign delivery and engagement metrics.
 
-[Screenshot 7 Here]
+<img src="./README/screenshots/08-campaign-analytics.png" width="100%" />
 
 ---
 
@@ -201,7 +238,7 @@ Monitor campaign delivery and engagement metrics.
 
 Receive AI-generated recommendations and performance summaries.
 
-[Screenshot 8 Here]
+<img src="./README/screenshots/09-ai-copilot.png" width="100%" />
 
 ---
 
