@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './pages/Dashboard';
@@ -47,6 +48,7 @@ function App() {
           <Route path="/support" element={<Layout><PlaceholderPage title="Help" message="Documentation and support center coming soon." icon={HelpCircle} /></Layout>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <SpeedInsights />
       </Router>
     </ToastProvider>
   );
